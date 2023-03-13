@@ -6,7 +6,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Montserrat&display=swap');
     </style>
     <style>
-        h1 {font-family: 'Montserrat', sans-serif; font-size: 10em; color: #34282C;}
+        h1 {font-family: 'Montserrat', sans-serif; font-size: 8em; color: #34282C;}
     </style>
 
 </head>
@@ -16,24 +16,36 @@
 <div id="container" style="text-align: center; height: 100%">
 <div id="center" style="position: absolute; top: 50%; left: 50%; -ms-transform: translate(-50%, -50%); transform: translate(-50%, -50%)">
 
-<h1 id="status">Listen to the story</h1>
+<h1 id="status">Set the sliders below, then click Start</h1>
+
+<!-- <div id="durationClock" style="width:4em; height:em; text-align: center; font-size: 2em; font-family: 'Montserrat', sans-serif; font-weight:bolder; background-image: linear-gradient(to top, rgba(255,255,255,1),  rgba(255,255,255,0),  rgba(255,255,255,1))">
+    <div style="width:100%; height: 25%; transform: rotate3d(1, 0, 0, 90deg)">0</div>
+    <div style="width:100%; height: 25%; transform: rotate3d(1, 0, 0, 50deg)">1</div>
+    <div style="width:100%; height: 25%; ">2</div>
+    <div style="width:100%; height: 25%; transform: rotate3d(-1, 0, 0, 50deg)">3</div>
+    <div style="width:100%; height: 25%; transform: rotate3d(1, 0, 0, 90deg)">4</div>
+    <!-- <div style="width:100%; height: 5%;"></div>
+    <div style="width:100%; height: 10%; ">˄</div>
+    <div style="width:100%; height: 10%; ">˅</div>
+
+</div> -->
 
 <form id="user_input">
 
     <label for="totalMinsInput">Total duration (mins):</label>
-    <input id="totalMinsInput" type="range" min="5" max="20" value="10" class="slider" oninput="changeSliderOutput('totalMinsInput','totalMinsValue')">
-    <span id="totalMinsValue">10</span>
+    <input id="totalMinsInput" type="range" min="1" max="20" value="13" class="slider" oninput="changeSliderOutput('totalMinsInput','totalMinsValue')">
+    <span id="totalMinsValue">13</span>
 
     <br>
 
-    <label for="storyMinsInput">Total story duration (mins):</label>
-    <input id="storyMinsInput" type="range" min="1" max="20" value="5" class="slider" oninput="changeSliderOutput('storyMinsInput','storyMinsValue')">
-    <span id="storyMinsValue">5</span>
+    <label for="focusPercInput">Amount of time focusing on yourself (%):</label>
+    <input id="focusPercInput" type="range" min="1" max="100" value="50" class="slider" oninput="changeSliderOutput('focusPercInput','focusPercValue')">
+    <span id="focusPercValue">50</span>%
 
     <br>
 
     <label for="switchesNum">Number of switches:</label>
-    <input type="number" id="switchesNum" name="switchesNum" min="0.5" max="50" value="10">
+    <input type="number" id="switchesNum" name="switchesNum" min="0.5" max="50" value="20">
     
     <br>
 
@@ -44,9 +56,7 @@
 
 </form>
 
-<button type="button" onclick="start()">Try it</button>
-<button type="button" onclick="play()">Try it</button>
-<button type="button" onclick="calculateSteps('totalMinsInput','storyMinsInput','switchesNum','randomness')">Try it</button>
+<button type="button" onclick="calculateSteps('totalMinsInput','focusPercInput','switchesNum','randomness')">Try it</button>
 
 </div>
 
@@ -58,12 +68,14 @@
         output.innerHTML = slider.value;
     };
 
-    function focusType(story=true) {
+    function focusType(type="story") {
         var title = document.getElementById("status");
-        if(story) {
+        if(type=="story") {
             title.innerHTML = "Listen to the story"
-        } else {
+        } else if(type=="focus") {
             title.innerHTML = "Focus on yourself"
+        } else {
+            title.innerHTML = "Finished. Well done!"
         }
     };
 
@@ -75,11 +87,12 @@
         return Math.random() * (max - min) + min;
     }
 
-    function _calculateSteps(totalMinsInput,storyMinsInput,switchesNum,randomness=true) {
+    function _calculateSteps(totalMinsInput,focusPercInput,switchesNum,randomness=true) {
+        focusPercInput = focusPercInput/100;
         var numStorySlots = math.ceil(switchesNum/2);
         var numSelfSlots = math.floor(switchesNum/2);
-        var storySlotDuration = storyMinsInput/numStorySlots;
-        var selfSlotDuration = (totalMinsInput - storyMinsInput)/numSelfSlots;
+        var storySlotDuration = ((1-focusPercInput)*totalMinsInput)/numSelfSlots;
+        var selfSlotDuration = (focusPercInput*totalMinsInput)/numStorySlots;
         var arr = []; var r = [];
         for (let i = 0; i < numStorySlots; i++) {
             arr.push([storySlotDuration,selfSlotDuration]);              
@@ -103,30 +116,31 @@
         return(arr)
     }
 
-    async function calculateSteps(totalMinsInputId,storyMinsInputId,switchesNumId,randomnessId) {
-        var totalMinsInput = document.getElementById(totalMinsInputId).value;
-        var storyMinsInput = document.getElementById(storyMinsInputId).value;
-        var switchesNum = document.getElementById(switchesNumId).value;
-        var randomness = document.getElementById(randomnessId).value;
-        var array = _calculateSteps(totalMinsInput,storyMinsInput,switchesNum,randomness);
+    async function calculateSteps(totalMinsInputId,focusPercInputId,switchesNumId,randomnessId) {
+        var array = _calculateSteps(
+            totalMinsInput = document.getElementById(totalMinsInputId).value,
+            focusPercInput = document.getElementById(focusPercInputId).value,
+            switchesNum = document.getElementById(switchesNumId).value,
+            randomness = document.getElementById(randomnessId).checked,
+            );
         for(let i = 0; i < array.length; i++) {
             play();
-            focusType(story=true);
+            focusType(type="story");
             await _sleep(array[i][0]*60*1000);
             play();
-            focusType(story=false);
+            focusType(type="focus");
             await _sleep(array[i][1]*60*1000);
         }
-    }    
-
-    function start() {
-        document.getElementById("status").innerHTML = "Focus on yourself";
-    };
+        play();
+        focusType(type="end");
+    }
 
     function play() {
         var audio = new Audio('https://www.soundjay.com/misc/small-bell-ring-01a.mp3');
+        audio.volume = 1.0;
         audio.play();
-    };
+    };    
+
 </script>
 
 </body>
